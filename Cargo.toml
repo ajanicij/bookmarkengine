@@ -1,0 +1,17 @@
+[package]
+name = "bookmarkengine"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+html5ever = "0.36.1"
+chrono = "0.4.42"
+tantivy = "0.25.0"
+scraper = "0.25.0"
+reqwest = { version = "0.12.24", features = ["__rustls", "__rustls-ring", "__tls", "blocking", "brotli"] }
+regex = "1.12.3"
+indicatif = "0.18.4"
+rayon = "1.11.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.149"

@@ -1,0 +1,8 @@
+[package]
+name = "parser"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+html5ever = "0.36.1"
+netscape_bookmark_parser = "0.1.4"

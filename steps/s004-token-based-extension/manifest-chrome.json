@@ -1,0 +1,27 @@
+{
+    "manifest_version": 3,
+    "name": "Social Bookmark Sender",
+    "version": "1.0",
+    "description": "Send current tab's URL to a social bookmarking service.",
+    "permissions": [
+      "tabs",
+      "activeTab",
+      "scripting"
+    ],
+    "host_permissions": [
+      "<all_urls>"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "action": {
+      "default_title": "Save to Bookmarking Service",
+      "default_icon": {
+        "50": "icons/icon.png"
+      }
+    },
+    "icons": {
+      "50": "icons/icon.png"
+    }
+  }
+  

@@ -1,0 +1,231 @@
+s001-backend
+Test backend server in Python/Flask.
+
+s002
+<a target="_blank" href="https://icons8.com/icon/123456/add-bookmark">Add Bookmark</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
+
+s005-mozilla-tutorial
+Mozilla tutorial borderify.
+
+s007-reqwest
+Using Rust library reqwest. A sample result (from WSWS) in result.txt.
+
+s008-readfile
+Program reads the whole contents of a text file to memory.
+
+s009-scrape
+Use scraper to parse HTML. Use method html to get the whole
+document content.
+
+s010-meilisearch
+Beginnings of search with meilisearch. Abandoned: I will
+try tantivy, because I don't want a backend server at the
+moment.
+
+s011-tantivy
+Basic search using Tantivy.
+
+s012-parse-html
+Parsing an HTML document with scraper.
+
+s013-parse-bookmarks
+Parsing HTML bookmark files with scraper. Abandoned - I will
+try with html5ever.
+
+s014-parse-html5ever
+Scan input HTML file using html5ever and sample from that project's
+repository that outputs tokens (HTML tags, CHAR data, etc.).
+
+s015-bookmark-parser
+Parse bookmark file input.html using netscape_bookmark_parser. Doesn't
+work.
+
+s016-bookmarkt
+Using bookmarkt for scanning bookmarks.html. Abandoned.
+Removed - bookmarkt is GPL.
+
+s017-scan
+Scanning one-line HTML file with html5ever.
+
+s018-readlines
+Read text file line by line.
+
+s019-scan-bookmarks
+Scan bookmarks file with html5ever and print HTML tokens (start/end
+tags (names/attributes), text).
+
+s020-scan-to-tokens
+Parsing text file line by line and generating a vector of tokens; each
+token can be for start tag, end tag and text. Using a vector for
+storing a tag's attributes. Next: move to using a mapping key -> value.
+
+s021-map
+Exploring HashMap to store a map string -> string.
+
+s022-attribute-map
+From s020-scan-to-tokens: tag attributes are now stores as a mapping
+key -> value (HashMap<String, String>).
+
+s023-stack
+Stack of strings implemented as a Vec<String>.
+
+s024-bookmarks
+Process bookmarks file (input.html) and store and print bookmarks.
+
+s025-web-page-search
+Fetch one web page, create Tantivy index, search for a phrase in the index
+and display the result.
+
+s026-cmdline
+Parse command line parameters using clap. Parameters supported are --index
+and --url.
+
+s027-parse-web-page
+Download a web page and extract its title.
+
+s028-cmdline-bookmarks
+Two command line programs: write-search that downloads web pages and indexes
+them and search that searches for a query in the index.
+
+s029-bookmark-search
+Read bookmarks, download and index pages, search.
+TODO: web page cleanup (html2text, readibility), showing snippets in search
+results, incremental indexing of the most recent bookmarks, letting user of
+search specify how many results he wants to see, web interface.
+
+s030-html2text
+Convert HTML file to plain text and display.
+
+s031-fast_html2md
+Convert HTMLfile to markdown using s031-fast_html2md.
+
+s032-calculate-time
+Calculate the number of days from a specified epoch timestamp to now using chrono.
+
+s033-bookmarks-with-datetime
+Added field add_date to bookmark item.
+
+s035-parse-u32
+Parse string to u32.
+
+s036-timestamp
+Convert timestamp as string to DateTime (UTC time), then calculate the number of
+days from that time to now.
+
+s037-bookmarks-datetime
+Added field last_modified and remove add_date in bookmarks. Update code to read
+last_modified from bookmark file.
+
+s038-bookmarks-incremental
+From s037, indexing and searching works. Bookmark contains last_modified.
+TODO: add href in the index.
+
+s039-bookmarks-with-href
+Storing the href (URL) with each bookmark.
+
+s040-is-dir
+Using std::fs to check if a file exists and whether it is a directory or
+regular file.
+
+s041-create-if-not-file
+If "./index" is a regular file, report error. If it is a directory, do nothing and
+report success. If it doesn't exist, create as a directory and report success.
+
+s042-create-index-dir
+Program gets command line parameter: --index <index-dir> and tries to create the
+index directory. If the path alrady exists, but it is a regular file, exit with
+error message.
+
+s043-process-bookmarks
+From s042: added --bookmarks and code for reading and parsing bookmarks file.
+For now just displaying parsed information.
+
+s044-print-bookmarks
+From s044: parsing bookmarks into a vector of bookmark items and printing all the
+items in the vector.
+
+s045-max-age
+Added command line parameter max_age. Scanner adds a bookmark to the vector of
+bookmarks only if it is not older than max_age. max_age can be empty, in which case
+all bookmarks are added to the vector. Other items (folder and unfolder) are
+always added to the vector of bookmarks.
+
+s046-clap-subcommands
+Small program to use clap to implement two subcommands write and search.
+
+s047-write-subcommand
+from s045 and s046: writing index is now a clap subcommand.
+
+s048-search-subcommand
+from s047: searching in the index is now a clap subcommand. Extracted creating
+Tantivy schema to function create_schema, which is called from both write_index and
+search.
+
+s049-optimizing
+Created struct Indexer for indexing, which has separate methods write and commit.
+The purpose is to enable indexing multiple bookmarks before committing, in order
+to speed up the operation.
+
+s050-occasional-commit
+Only do commit to disk on every ten index writes.
+
+s051-input-mbs
+Code that parses size that can be expressed in raw number, a number of KB, MB or
+GB. For example: 10000, 10KB, 20MB, 1GB.
+
+s052-cmdline
+Added two more command line parameters to write subcommand: commit_period and
+memory_budget. commit_period defines how often we do commit, and memory_budget is
+the memory budget passed to index.writer.
+
+s053-status-bar
+Show download status using status_line crate.
+
+s054-status-indicatif
+Show status using indicatif.
+
+s055-bookmark-indicatif
+From s052-cmdline. While indexing, show progress using indicatif.
+
+s056-test-rayon
+Running function do_work in a thread pool using Rayon. Each run of do_work sleeps
+for a random time and then exits.
+
+s057-rayon-send-result
+From s056, but do_work returns a string that is sent back on a channel. Main thread
+runs another thread that receives all the results.
+
+s058-rayon-join
+From s057, but we also get a join handle from spawn and then join that handle before
+finishing.
+
+s059-bookmark-rayon
+Beginning of code using rayon to index bookmarks in parallel. Postponed; first I
+have to work out using rayon to send a structure through a channel to another
+thread.
+
+s060-rayon-send-struct
+From s058; we send an instance of a struct though the channel.
+
+s061-bookmark-rayon
+From s059-bookmark-rayon. Using a thread pool with the size 20. The whole set of
+~3400 bookmarks is index in 5min 49sec (down from 42min). TODO: the code is hacky,
+clean up and refactor. The size of the thread pool is now hard-coded.
+
+s062-indexer
+From s061-bookmark-rayon: reorganized so Indexer::index creates all the threads
+needed to run indexing.
+
+s063-write-params
+Made write subcommand's parameters work as expected: if --commit-period is not
+provided on the command line, the default is 0, which means the indexer only
+commits once, at the end of indexing all bookmarks in memory.
+
+s064-parse-json
+Parse JSON with serde.
+
+s065-tidy-search-output
+For write command, added command-line parameter --threads for the number of threads
+in the indexing worker pool. For search command, added command-line parameter
+--num-result for the number of search results to display. Added url field for
+indexing the bookmark's URL. Tidied the search result output.

@@ -1,0 +1,7 @@
+[package]
+name = "pageclean"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+html2text = "0.16.5"
