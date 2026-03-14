@@ -1,0 +1,20 @@
+## This directory contains two Python3 scripts:
+
+- create_db.py - Create SQLite database in the file bookmarks.db
+                 and insert two records.
+- dump_db.py - Dump the contents of the table Bookmarks from bookmarks.db
+
+## Bookmark table schema:
+
+```
+CREATE TABLE IF NOT EXISTS Bookmark(
+			ID            INT PRIMARY KEY NOT NULL,
+			Title         TEXT NOT NULL,
+			Path          TEXT NOT NULL,
+			URL           TEXT NOT NULL,
+			ADD_DATE      INT  NOT NULL,
+			LAST_MODIFIED INT  NOT NULL,
+
+			UNIQUE(Title, Path, URL)
+		);
+```
