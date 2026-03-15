@@ -229,3 +229,9 @@ For write command, added command-line parameter --threads for the number of thre
 in the indexing worker pool. For search command, added command-line parameter
 --num-result for the number of search results to display. Added url field for
 indexing the bookmark's URL. Tidied the search result output.
+
+s066-sqlite3
+Using SQLite3 from Python3.
+
+s067-rusqlite
+Using SQLite3 from Rust.
