@@ -235,3 +235,7 @@ Using SQLite3 from Python3.
 
 s067-rusqlite
 Using SQLite3 from Rust.
+
+s068-bookmark-db
+Create a bookmark database, insert one record and query and list all records
+in the database.
