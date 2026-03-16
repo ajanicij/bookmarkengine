@@ -239,3 +239,6 @@ Using SQLite3 from Rust.
 s068-bookmark-db
 Create a bookmark database, insert one record and query and list all records
 in the database.
+
+s069-bookmark-db
+From s068. Extracted database operations into separate module bookmarkdb.rs.
