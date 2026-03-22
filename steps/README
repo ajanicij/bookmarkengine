@@ -242,3 +242,7 @@ in the database.
 
 s069-bookmark-db
 From s068. Extracted database operations into separate module bookmarkdb.rs.
+
+s070-db-api
+From s070. Cleaned up database operations. Renamed insert_db to insert. Added
+exists.
