@@ -10,6 +10,7 @@ mod scanner;
 mod bookmark_item;
 mod bookmark_token;
 mod utils;
+mod bookmarkdb;
 
 use crate::BookmarkScanner;
 
@@ -31,6 +32,9 @@ enum Command {
 
         #[arg(long, short)]
         bookmark: PathBuf,
+
+        #[arg(long)]
+        db: PathBuf,
 
         #[arg(long, short, default_value = "")]
         max_age: String,
@@ -71,12 +75,19 @@ fn run() -> Result<String, Box<dyn Error>> {
     let args = Args::parse();
     // println!("command: {:?}", args.command);
     match args.command {
-        Command::Write{index, bookmark, max_age, commit_period, memory_budget, threads} => {
+        Command::Write{
+            index,
+            bookmark,
+            db,
+            max_age,
+            commit_period,
+            memory_budget, 
+            threads} => {
             // let index_str = index.into_os_string().into_string().unwrap();
 
             // println!("write(index={:?}, bookmark={:?}, max_age={:?}, commit_period={:?}, memory_budget={:?}",
             //     index, bookmark, max_age, commit_period, memory_budget);
-            cmd_write(index, bookmark, max_age, commit_period, memory_budget, threads)?;
+            cmd_write(index, bookmark, db, max_age, commit_period, memory_budget, threads)?;
         },
         Command::Search{index, query, num_results} => {
             // println!("search(index={:?}, query={:?}", index, query);
@@ -94,7 +105,7 @@ fn cmd_search(index: PathBuf, query: String, num_results: u32) -> Result<String,
     Ok("Done".to_string())
 }
 
-fn cmd_write(index: PathBuf, bookmarks: PathBuf, max_age: String, commit_period: u32,
+fn cmd_write(index: PathBuf, bookmarks: PathBuf, db: PathBuf, max_age: String, commit_period: u32,
     memory_budget: String, threads: usize) ->
 Result<String, Box<dyn Error>> {
     let max_age_val: Option<u32> = if max_age == "" {
@@ -136,14 +147,24 @@ Result<String, Box<dyn Error>> {
         }
     }
 
+    let mut bookmark_db = bookmarkdb::BookmarkDb::new(&db)?;
+
+    // Filter the bookmarks. Only those that are not in the database should
+    // be processed.
+    // let x: u8 = scanner.bookmarks; Vec<Item>
+    // let x: u8 = &bookmark_db; // BookmarkDb
+    let new_bookmarks = filter_bookmarks(&scanner.bookmarks, &mut bookmark_db);
+    
+
     // Count the bookmarks.
     let total_count = scanner.bookmarks.len();
 
     println!("Indexing {} bookmarks", total_count);
 
+
     let mut indexer = utils::Indexer::new(&index_str, memory)
         .expect("Failed to create indexer");
-    indexer.index(scanner.bookmarks, commit_period, threads)?;
+    indexer.index(scanner.bookmarks, bookmark_db, commit_period, threads)?;
 
     Ok("".to_string())
 }
@@ -170,4 +191,26 @@ fn create_if_not_file(entry: &str) -> Result<String, String> {
 
 fn directory_exists(path: &PathBuf) -> bool {
     return path.exists() && path.is_dir();
+}
+
+fn filter_bookmarks(bookmarks: &Vec<bookmark_item::Item>, bookmark_db: &mut bookmarkdb::BookmarkDb)
+-> Vec<bookmark_item::Item> {
+    let mut result: Vec<bookmark_item::Item> = vec![];
+    for bookmark in bookmarks {
+        if let bookmark_item::Item::Bookmark { path, href, .. } = bookmark {
+            let bookmark_db_record = bookmarkdb::Bookmark {
+                description: None,
+                path: path.clone(),
+                href: href.clone(),
+                last_modified: 0,
+            };
+            if let Ok(exists) = bookmark_db.exists(&bookmark_db_record) {
+                if !exists {
+                    continue;
+                }
+            }
+        }
+        result.push(bookmark.clone());
+    }
+    result
 }

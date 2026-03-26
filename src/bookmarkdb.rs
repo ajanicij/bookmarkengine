@@ -1,7 +1,8 @@
 use rusqlite::{Connection, Result, params, Row};
 use std::error::Error;
+use std::path::PathBuf;
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Bookmark {
     pub description: Option<String>,
     pub path: String,
