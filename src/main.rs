@@ -10,7 +10,7 @@ mod scanner;
 mod bookmark_item;
 mod bookmark_token;
 mod utils;
-mod bookmarkdb;
+mod db;
 
 use crate::BookmarkScanner;
 
@@ -147,12 +147,10 @@ Result<String, Box<dyn Error>> {
         }
     }
 
-    let mut bookmark_db = bookmarkdb::BookmarkDb::new(&db)?;
+    let mut bookmark_db = db::Db::new(&db)?;
 
     // Filter the bookmarks. Only those that are not in the database should
     // be processed.
-    // let x: u8 = scanner.bookmarks; Vec<Item>
-    // let x: u8 = &bookmark_db; // BookmarkDb
     let new_bookmarks = filter_bookmarks(&scanner.bookmarks, &mut bookmark_db);
     
 
@@ -193,12 +191,12 @@ fn directory_exists(path: &PathBuf) -> bool {
     return path.exists() && path.is_dir();
 }
 
-fn filter_bookmarks(bookmarks: &Vec<bookmark_item::Item>, bookmark_db: &mut bookmarkdb::BookmarkDb)
+fn filter_bookmarks(bookmarks: &Vec<bookmark_item::Item>, bookmark_db: &mut db::Db)
 -> Vec<bookmark_item::Item> {
     let mut result: Vec<bookmark_item::Item> = vec![];
     for bookmark in bookmarks {
         if let bookmark_item::Item::Bookmark { path, href, .. } = bookmark {
-            let bookmark_db_record = bookmarkdb::Bookmark {
+            let bookmark_db_record = db::Bookmark {
                 description: None,
                 path: path.clone(),
                 href: href.clone(),

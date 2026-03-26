@@ -18,7 +18,7 @@ use std::sync::mpsc;
 
 use crate::bookmark_item;
 
-use crate::bookmarkdb;
+use crate::db;
 
 const GB: usize = 1024 * 1024 * 1024;
 const MB: usize = 1024 * 1024;
@@ -117,7 +117,7 @@ impl Indexer {
         Ok(())
     }
 
-    pub fn index(&mut self, bookmarks: Vec<bookmark_item::Item>, db: bookmarkdb::BookmarkDb,
+    pub fn index(&mut self, bookmarks: Vec<bookmark_item::Item>, db: db::Db,
         commit_period: u32, threads: usize) -> Result<(), Box<dyn Error>> {
 
         let (tx, rx) = mpsc::channel::<BookmarkMessage>();

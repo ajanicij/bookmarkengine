@@ -10,7 +10,7 @@ pub struct Bookmark {
     pub last_modified: i64,
 }
 
-pub struct BookmarkDb {
+pub struct Db {
     pub conn: Connection,
 }
 
@@ -25,10 +25,10 @@ impl Bookmark {
     }
 }
 
-impl BookmarkDb {
-    pub fn new(db: &PathBuf) -> Result<BookmarkDb> {
+impl Db {
+    pub fn new(db: &PathBuf) -> Result<Db> {
         let conn = Connection::open(db)?;
-        Ok(BookmarkDb{ conn })
+        Ok(Db{ conn })
     }
 
     pub fn create_db(&self) -> Result<()> {
