@@ -7,7 +7,7 @@ use std::fs;
 use std::io::BufRead;
 
 mod scanner;
-mod bookmark_item;
+mod item;
 mod token;
 mod utils;
 mod db;
@@ -191,11 +191,11 @@ fn directory_exists(path: &PathBuf) -> bool {
     return path.exists() && path.is_dir();
 }
 
-fn filter_bookmarks(bookmarks: &Vec<bookmark_item::Item>, bookmark_db: &mut db::Db)
--> Vec<bookmark_item::Item> {
-    let mut result: Vec<bookmark_item::Item> = vec![];
+fn filter_bookmarks(bookmarks: &Vec<item::Item>, bookmark_db: &mut db::Db)
+-> Vec<item::Item> {
+    let mut result: Vec<item::Item> = vec![];
     for bookmark in bookmarks {
-        if let bookmark_item::Item::Bookmark { path, href, .. } = bookmark {
+        if let item::Item::Bookmark { path, href, .. } = bookmark {
             let bookmark_db_record = db::Bookmark {
                 description: None,
                 path: path.clone(),

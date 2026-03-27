@@ -1,6 +1,5 @@
 use chrono::{DateTime, Utc};
 use std::error::Error;
-use crate::bookmark_item::*;
 use scraper::{Html, Selector};
 use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
@@ -16,7 +15,7 @@ use std::path::PathBuf;
 use regex::Regex;
 use std::sync::mpsc;
 
-use crate::bookmark_item;
+use crate::item;
 
 use crate::db;
 
@@ -29,7 +28,7 @@ pub struct Indexer {
     schema: Schema,
 }
 
-pub fn get_page(bookmark: &Item) -> Result<String, Box<dyn Error>> {
+pub fn get_page(bookmark: &item::Item) -> Result<String, Box<dyn Error>> {
     // println!("Indexing bookmark {:?}", bookmark);
     let client = reqwest::blocking::Client::builder()
     .user_agent("CLIAgent-bookmark-search/0.1")
@@ -38,7 +37,7 @@ pub fn get_page(bookmark: &Item) -> Result<String, Box<dyn Error>> {
     let url_string;
     // let description_string;
     match bookmark {
-        Item::Bookmark{ description: _description_field, path: _path_field, href, last_modified: _ } => {
+        item::Item::Bookmark{ description: _description_field, path: _path_field, href, last_modified: _ } => {
             url_string = href.to_string();
             // path_string = path_field.to_string();
             // description_string = description_field.to_string();
@@ -54,7 +53,7 @@ pub fn get_page(bookmark: &Item) -> Result<String, Box<dyn Error>> {
 
 #[derive(Debug, Clone)]
 pub struct BookmarkMessage {
-    pub bookmark: Item,
+    pub bookmark: item::Item,
     pub text: String,
 }
 
@@ -77,7 +76,7 @@ impl Indexer {
         let BookmarkMessage{bookmark, text} = message;
 
         match bookmark {
-            Item::Bookmark{ description: description_field, path: path_field, href, last_modified: _ } => {
+            item::Item::Bookmark{ description: description_field, path: path_field, href, last_modified: _ } => {
                 url_string = href.to_string();
                 path_string = path_field.to_string();
                 description_string = description_field.to_string();
@@ -117,7 +116,7 @@ impl Indexer {
         Ok(())
     }
 
-    pub fn index(&mut self, bookmarks: Vec<bookmark_item::Item>, db: db::Db,
+    pub fn index(&mut self, bookmarks: Vec<item::Item>, db: db::Db,
         commit_period: u32, threads: usize) -> Result<(), Box<dyn Error>> {
 
         let (tx, rx) = mpsc::channel::<BookmarkMessage>();
@@ -137,9 +136,9 @@ impl Indexer {
             pool.install(|| {
                 bookmarks
                 .into_par_iter()
-                .for_each_with(tx.clone(), |tx, bookmark| {
+                .for_each_with(tx.clone(), |tx: &mut mpsc::Sender<BookmarkMessage>, bookmark| {
                     match bookmark {
-                        Item::Bookmark{ description: _, path: _, href: _, last_modified: _, } => {
+                        item::Item::Bookmark{ description: _, path: _, href: _, last_modified: _, } => {
                             // println!("Fetching page: {:?}", bookmark);
                             let result = get_page(&bookmark);
                             let mut text = "".to_string();

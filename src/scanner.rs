@@ -11,7 +11,7 @@ use html5ever::tokenizer::{
 };
 
 use crate::token;
-use crate::bookmark_item;
+use crate::item;
 use crate::utils;
 
 use std::borrow::Borrow;
@@ -19,11 +19,11 @@ use std::collections::HashMap;
 
 use chrono::{DateTime, Utc};
 
-use crate::bookmark_item::Item;
+use crate::item::Item;
 use crate::utils::days_from;
 
 pub struct BookmarkScanner {
-    pub bookmarks: Vec<bookmark_item::Item>,
+    pub bookmarks: Vec<item::Item>,
     tokens: Vec<token::Token>, // vector of tokens from one line from a bookmark file
     index: usize, // index of current token we are processing
     last_modified: DateTime<Utc>,
@@ -78,7 +78,7 @@ impl BookmarkScanner {
         }
     }
 
-    fn process_tokens(&mut self) -> Option<bookmark_item::Item> {
+    fn process_tokens(&mut self) -> Option<item::Item> {
         if let Some(item) = self.try_parse_dl_p() {
             return Some(item);
         }
@@ -97,15 +97,15 @@ impl BookmarkScanner {
         None
     }
 
-    pub fn try_parse_end_dl(&mut self) -> Option<bookmark_item::Item> {
+    pub fn try_parse_end_dl(&mut self) -> Option<item::Item> {
         self.index = 0;
         self.skip_text()?;
         self.check_end_tag("dl")?;
-        let item = bookmark_item::Item::Unfolder;
+        let item = item::Item::Unfolder;
         Some(item)
     }
 
-    pub fn try_parse_dl_p(&mut self) -> Option<bookmark_item::Item> {
+    pub fn try_parse_dl_p(&mut self) -> Option<item::Item> {
         self.index = 0;
         self.skip_text()?;
         self.check_start_tag("dl")?;
@@ -119,7 +119,7 @@ impl BookmarkScanner {
             result
         };
         self.path.push(folder.clone());
-        let item = bookmark_item::Item::Folder { name: folder };
+        let item = item::Item::Folder { name: folder };
         Some(item)
     }
 
@@ -132,7 +132,7 @@ impl BookmarkScanner {
         Some(())
     }
 
-    pub fn try_parse_dt_a(&mut self) -> Option<bookmark_item::Item> {
+    pub fn try_parse_dt_a(&mut self) -> Option<item::Item> {
         self.index = 0;
         self.skip_text()?;
         self.check_start_tag("dt")?;
@@ -141,7 +141,7 @@ impl BookmarkScanner {
         self.next()?;
 
         if let token::Token::Text{text} = &self.tokens[self.index] {
-            return Some(bookmark_item::Item::Bookmark {
+            return Some(item::Item::Bookmark {
                 description: text.clone(),
                 path: self.path.join("/"),
                 href: self.href.clone(),
