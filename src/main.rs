@@ -8,7 +8,7 @@ use std::io::BufRead;
 
 mod scanner;
 mod bookmark_item;
-mod bookmark_token;
+mod token;
 mod utils;
 mod db;
 

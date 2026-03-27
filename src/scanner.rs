@@ -10,11 +10,9 @@ use html5ever::tokenizer::{
     ParseError, Token, TokenSink, TokenSinkResult, Tokenizer, TokenizerOpts,
 };
 
-use crate::bookmark_token;
+use crate::token;
 use crate::bookmark_item;
 use crate::utils;
-
-use crate::bookmark_token::*;
 
 use std::borrow::Borrow;
 use std::collections::HashMap;
@@ -26,7 +24,7 @@ use crate::utils::days_from;
 
 pub struct BookmarkScanner {
     pub bookmarks: Vec<bookmark_item::Item>,
-    tokens: Vec<bookmark_token::BookmarkToken>, // vector of tokens from one line from a bookmark file
+    tokens: Vec<token::Token>, // vector of tokens from one line from a bookmark file
     index: usize, // index of current token we are processing
     last_modified: DateTime<Utc>,
     folder: String,
@@ -142,7 +140,7 @@ impl BookmarkScanner {
         self.parse_a()?;
         self.next()?;
 
-        if let BookmarkToken::Text{text} = &self.tokens[self.index] {
+        if let token::Token::Text{text} = &self.tokens[self.index] {
             return Some(bookmark_item::Item::Bookmark {
                 description: text.clone(),
                 path: self.path.join("/"),
@@ -156,7 +154,7 @@ impl BookmarkScanner {
     fn parse_a(&mut self) -> Option<()> {
         self.check_not_end()?;
         self.check_start_tag("a")?;
-        if let BookmarkToken::StartToken{name: _, attributes} = &self.tokens[self.index] {
+        if let token::Token::StartToken{name: _, attributes} = &self.tokens[self.index] {
             let href = if let Some(href) = attributes.get("href") {
                 href.clone()
             } else {
@@ -178,7 +176,7 @@ impl BookmarkScanner {
 
     fn skip_text(&mut self) -> Option<()> {
         self.check_not_end()?;
-        if let BookmarkToken::Text{text: _} = &self.tokens[self.index] {
+        if let token::Token::Text{text: _} = &self.tokens[self.index] {
             self.next()?;
             return Some(());
         }
@@ -194,7 +192,7 @@ impl BookmarkScanner {
 
     fn check_start_tag(&mut self, tag: &str) -> Option<()> {
         self.check_not_end()?;
-        if let BookmarkToken::StartToken{name, attributes: _} = &self.tokens[self.index] {
+        if let token::Token::StartToken{name, attributes: _} = &self.tokens[self.index] {
             if name.eq_ignore_ascii_case(tag) {
                 return Some(());
             }
@@ -204,7 +202,7 @@ impl BookmarkScanner {
 
     fn check_end_tag(&mut self, tag: &str) -> Option<()> {
         self.check_not_end()?;
-        if let BookmarkToken::EndToken{name} = &self.tokens[self.index] {
+        if let token::Token::EndToken{name} = &self.tokens[self.index] {
             if name.eq_ignore_ascii_case(tag) {
                 self.path.pop();
                 return Some(());
@@ -216,7 +214,7 @@ impl BookmarkScanner {
     fn parse_h3(&mut self) -> Option<()> {
         self.check_not_end()?;
         self.check_start_tag("h3")?;
-        if let BookmarkToken::StartToken{name: _, attributes} = &self.tokens[self.index] {
+        if let token::Token::StartToken{name: _, attributes} = &self.tokens[self.index] {
             let last_modified = if let Some(last_modified) = attributes.get("last_modified") {
                 last_modified.clone()
             } else {
@@ -225,7 +223,7 @@ impl BookmarkScanner {
             self.last_modified = utils::date_time_from_str(&last_modified).ok()?;
         }
         self.next()?;
-        if let BookmarkToken::Text{text} = &self.tokens[self.index] {
+        if let token::Token::Text{text} = &self.tokens[self.index] {
             self.folder = text.clone();
             return Some(());
         }
@@ -242,7 +240,7 @@ impl BookmarkScanner {
 struct TokenPrinter {
     in_char_run: Cell<bool>,
     text: RefCell<String>,
-    tokens: RefCell<Vec<bookmark_token::BookmarkToken>>,
+    tokens: RefCell<Vec<token::Token>>,
 }
 
 impl TokenPrinter {
@@ -253,7 +251,7 @@ impl TokenPrinter {
                 self.text.borrow_mut().clear();
             }
             (true, false) => {
-                let token = bookmark_token::BookmarkToken::Text{text: self.text.borrow().clone()};
+                let token = token::Token::Text{text: self.text.borrow().clone()};
                 self.tokens.borrow_mut().push(token);
 
             }
@@ -297,11 +295,11 @@ impl TokenSink for TokenPrinter {
                             let value = value_str.to_string();
                             attributes.insert(key, value);
                         }
-                        let token = bookmark_token::BookmarkToken::StartToken{name: tag.name.as_ref().to_string(), attributes: attributes};
+                        let token = token::Token::StartToken{name: tag.name.as_ref().to_string(), attributes: attributes};
                         self.tokens.borrow_mut().push(token);
                     }
                     EndTag => {
-                        let token = bookmark_token::BookmarkToken::EndToken{name: tag.name.as_ref().to_string()};
+                        let token = token::Token::EndToken{name: tag.name.as_ref().to_string()};
                         self.tokens.borrow_mut().push(token);
                     }
                 }
