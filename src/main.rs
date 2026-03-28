@@ -151,18 +151,16 @@ Result<String, Box<dyn Error>> {
 
     // Filter the bookmarks. Only those that are not in the database should
     // be processed.
-    let new_bookmarks = filter_bookmarks(&scanner.bookmarks, &mut bookmark_db);
+    let filtered_bookmarks = filter_bookmarks(&scanner.bookmarks, &mut bookmark_db);
     
-
     // Count the bookmarks.
-    let total_count = scanner.bookmarks.len();
+    let total_count = filtered_bookmarks.len();
 
     println!("Indexing {} bookmarks", total_count);
 
-
-    let mut indexer = utils::Indexer::new(&index_str, memory)
+    let mut indexer = utils::Indexer::new(&index_str, memory, bookmark_db)
         .expect("Failed to create indexer");
-    indexer.index(scanner.bookmarks, bookmark_db, commit_period, threads)?;
+    indexer.index(filtered_bookmarks, commit_period, threads)?;
 
     Ok("".to_string())
 }

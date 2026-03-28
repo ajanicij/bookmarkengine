@@ -26,6 +26,7 @@ const KB: usize = 1024;
 pub struct Indexer {
     writer: IndexWriter,
     schema: Schema,
+    db: db::Db,
 }
 
 pub fn get_page(bookmark: &item::Item) -> Result<String, Box<dyn Error>> {
@@ -58,28 +59,31 @@ pub struct BookmarkMessage {
 }
 
 impl Indexer {
-    pub fn new(index_path: &str, memory_budget: usize) -> Result<Indexer, Box<dyn Error>> {
+    pub fn new(index_path: &str, memory_budget: usize, db: db::Db) -> Result<Indexer, Box<dyn Error>> {
         let schema = create_schema();
         let directory = MmapDirectory::open(&index_path)?;
         let index = Index::open_or_create(directory, schema.clone())?;
         let index_writer: IndexWriter = index.writer(memory_budget)?;
         Ok(Indexer{
             writer: index_writer,
-            schema
+            schema,
+            db
         })
     }
 
-    pub fn write(&self, message: BookmarkMessage)  -> Result<(), Box<dyn Error>> {
+    pub fn write(&mut self, message: BookmarkMessage)  -> Result<(), Box<dyn Error>> {
         let url_string;
         let path_string;
         let description_string;
         let BookmarkMessage{bookmark, text} = message;
+        let last_modified: DateTime<Utc>;
 
         match bookmark {
-            item::Item::Bookmark{ description: description_field, path: path_field, href, last_modified: _ } => {
+            item::Item::Bookmark{ description: description_field, path: path_field, href, last_modified: last_modified_tmp } => {
                 url_string = href.to_string();
                 path_string = path_field.to_string();
                 description_string = description_field.to_string();
+                last_modified = last_modified_tmp;
             },
             _ => return Err(Box::from(format!("Not a bookmark: {:?}", bookmark))),
         }
@@ -108,6 +112,14 @@ impl Indexer {
             text
         );
         self.writer.add_document(doc)?;
+
+        let bookmark = db::Bookmark {
+            description: Some(description_string),
+            path: path_string,
+            href: url_string,
+            last_modified: last_modified.timestamp(),
+        };
+        self.db.insert(&bookmark)?;
         Ok(())
     }
 
@@ -116,7 +128,7 @@ impl Indexer {
         Ok(())
     }
 
-    pub fn index(&mut self, bookmarks: Vec<item::Item>, db: db::Db,
+    pub fn index(&mut self, bookmarks: Vec<item::Item>,
         commit_period: u32, threads: usize) -> Result<(), Box<dyn Error>> {
 
         let (tx, rx) = mpsc::channel::<BookmarkMessage>();
