@@ -158,6 +158,7 @@ Result<String, Box<dyn Error>> {
     }
 
     let mut bookmark_db = db::Db::new(&db)?;
+    bookmark_db.create_db()?;
 
     // Filter the bookmarks. Only those that are not in the database should
     // be processed.
@@ -211,7 +212,7 @@ fn filter_bookmarks(bookmarks: &Vec<item::Item>, bookmark_db: &mut db::Db)
                 last_modified: 0,
             };
             if let Ok(exists) = bookmark_db.exists(&bookmark_db_record) {
-                if !exists {
+                if exists {
                     continue;
                 }
             }
