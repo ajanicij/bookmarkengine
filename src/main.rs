@@ -53,6 +53,9 @@ enum Command {
         #[arg(long, short)]
         index: PathBuf,
 
+        #[arg(long)]
+        db: PathBuf,
+
         #[arg(long, short)]
         query: String,
 
@@ -89,19 +92,26 @@ fn run() -> Result<String, Box<dyn Error>> {
             //     index, bookmark, max_age, commit_period, memory_budget);
             cmd_write(index, bookmark, db, max_age, commit_period, memory_budget, threads)?;
         },
-        Command::Search{index, query, num_results} => {
+        Command::Search{
+            index,
+            db,
+            query,
+            num_results} => {
             // println!("search(index={:?}, query={:?}", index, query);
-            cmd_search(index, query, num_results)?;
+            cmd_search(index, db, query, num_results)?;
         },
     }
     Ok("Done".to_string())
 }
 
-fn cmd_search(index: PathBuf, query: String, num_results: u32) -> Result<String, Box<dyn Error>> {
+fn cmd_search(index: PathBuf, db: PathBuf, query: String, num_results: u32) -> Result<String, Box<dyn Error>> {
     if !directory_exists(&index) {
         return Err(Box::from(format!("{:?} doesn't exist or is not a directory", index)));
     }
-    let _ = utils::search(&index, &query, num_results)?;
+
+    let mut bookmark_db = db::Db::new(&db)?;
+
+    let _ = utils::search(&index, &mut bookmark_db, &query, num_results)?;
     Ok("Done".to_string())
 }
 

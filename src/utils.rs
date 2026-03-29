@@ -11,6 +11,8 @@ use rayon::prelude::*;
 use indicatif::{ProgressBar, ProgressStyle};
 use serde::{Deserialize, Serialize};
 
+use std::collections::HashMap;
+
 use std::path::PathBuf;
 use regex::Regex;
 use std::sync::mpsc;
@@ -242,7 +244,7 @@ url: {}
     }
 }
 
-pub fn search(index_path: &PathBuf, query_str: &str, num_results: u32) -> Result<(), Box<dyn Error>> {
+pub fn search(index_path: &PathBuf, db: &mut db::Db, query_str: &str, num_results: u32) -> Result<(), Box<dyn Error>> {
 
     println!("Searching...");
 
@@ -266,6 +268,7 @@ pub fn search(index_path: &PathBuf, query_str: &str, num_results: u32) -> Result
     // TODO: make limit configurable.
     let top_docs = searcher.search(&query, &TopDocs::with_limit(20))?;
     let mut count = 0;
+    let mut ids = HashMap::<i64, ()>::new();
     for (_score, doc_address) in top_docs {
         count += 1;
         if num_results > 0 && count > num_results {
@@ -274,6 +277,33 @@ pub fn search(index_path: &PathBuf, query_str: &str, num_results: u32) -> Result
         let retrieved_doc: TantivyDocument = searcher.doc(doc_address)?;
         let res_str = retrieved_doc.to_json(&schema);
         let res: SearchResult = serde_json::from_str(&res_str)?;
+
+        if res.path.len() == 0 {
+            continue;
+        }
+        if res.url.len() == 0 {
+            continue;
+        }
+
+        // Check if we have already displayed this result.
+        let bookmark = db::Bookmark{
+            description: None, // ignored
+            path: res.path[0].clone(),
+            href: res.url[0].clone(),
+            last_modified: 0, // ignored
+        };
+        if let Ok(ids_found) = db.search(&bookmark) {
+            if ids_found.len() == 0 {
+                // This should not happen, because if it does, it means that
+                // we found the bookmark in the index, but not in the database.
+                continue;
+            }
+            if ids.contains_key(&ids_found[0]) {
+                continue; // This means that the found result is a duplicate, so we skip it.
+            }
+            ids.insert(ids_found[0], ());
+        }
+
         // println!("TantivyDocument(to JSON): {}", res_str);
         res.show();
         // println!("{}\n", retrieved_doc.to_json(&schema));
