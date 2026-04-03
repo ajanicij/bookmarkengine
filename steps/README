@@ -246,3 +246,10 @@ From s068. Extracted database operations into separate module bookmarkdb.rs.
 s070-db-api
 From s070. Cleaned up database operations. Renamed insert_db to insert. Added
 exists.
+
+s071-read-toml
+Read a TOML file using toml crate.
+
+s072-readconfig
+Read configuration file name from command line, open the configuration file
+and parse it, and print the configuration.
