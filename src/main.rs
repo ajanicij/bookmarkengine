@@ -11,7 +11,7 @@ mod item;
 mod token;
 mod utils;
 mod db;
-
+mod config;
 use crate::BookmarkScanner;
 
 use crate::scanner::*;
@@ -28,18 +28,18 @@ struct Args {
 enum Command {
     Write {
         #[arg(long, short)]
-        index: PathBuf,
+        index: Option<PathBuf>,
 
         #[arg(long, short)]
-        bookmark: PathBuf,
+        bookmarks: Option<PathBuf>,
 
         #[arg(long)]
-        db: PathBuf,
+        db: Option<PathBuf>,
 
         #[arg(long, short, default_value = "")]
         max_age: String,
 
-        #[arg(long, short, default_value = "0")]
+        #[arg(long, default_value = "0")]
         commit_period: u32,
 
         #[arg(long, default_value = "50MB")]
@@ -47,20 +47,26 @@ enum Command {
 
         #[arg(long, default_value = "20")]
         threads: usize,
+
+        #[arg(long, short, default_value = "")]
+        config: Option<PathBuf>,
     },
 
     Search {
         #[arg(long, short)]
-        index: PathBuf,
+        index: Option<PathBuf>,
 
         #[arg(long)]
-        db: PathBuf,
+        db: Option<PathBuf>,
 
         #[arg(long, short)]
         query: String,
 
         #[arg(long, short = 'n', help = "Number of results (0 for all)", default_value = "0")]
         num_results: u32,
+
+        #[arg(long, short, default_value = "")]
+        config: Option<PathBuf>,
     }
 }
 
@@ -80,33 +86,64 @@ fn run() -> Result<String, Box<dyn Error>> {
     match args.command {
         Command::Write{
             index,
-            bookmark,
+            bookmarks,
             db,
             max_age,
             commit_period,
             memory_budget, 
-            threads} => {
+            threads,
+            config} => {
             // let index_str = index.into_os_string().into_string().unwrap();
 
             // println!("write(index={:?}, bookmark={:?}, max_age={:?}, commit_period={:?}, memory_budget={:?}",
             //     index, bookmark, max_age, commit_period, memory_budget);
-            cmd_write(index, bookmark, db, max_age, commit_period, memory_budget, threads)?;
+            cmd_write(index, bookmarks, db, max_age, commit_period, memory_budget, threads, config)?;
         },
         Command::Search{
             index,
             db,
             query,
-            num_results} => {
+            num_results,
+            config} => {
             // println!("search(index={:?}, query={:?}", index, query);
-            cmd_search(index, db, query, num_results)?;
+            cmd_search(index, db, query, num_results, config)?;
         },
     }
     Ok("Done".to_string())
 }
 
-fn cmd_search(index: PathBuf, db: PathBuf, query: String, num_results: u32) -> Result<String, Box<dyn Error>> {
+fn cmd_search(index_opt: Option<PathBuf>, db_opt: Option<PathBuf>, query: String, num_results: u32, config_opt: Option<PathBuf>) -> Result<String, Box<dyn Error>> {
+    let mut config: Option<config::Config> = None;
+    if let Some(config_file) = config_opt {
+        match config::Config::load(&config_file) {
+            Ok(config_obj) => config = Some(config_obj),
+            Err(err) => return Err(err),
+        }
+    }
+
+    // Process configuration.
+    // For each configuration parameter, the rule is the same: command-line parameter
+    // has a higher precedence than the parameter from the configuration file.
+    // If neither is provided, we exit with an error.
+    let mut index: Option<PathBuf> = None;
+    let mut db: Option<PathBuf> = None;
+    if let Some(config_obj) = config {
+        index = Some(config_obj.common.index);
+        db = Some(config_obj.common.db);
+    }
+    index = index.or(index_opt);
+    db = db.or(db_opt);
+    if index.is_none() {
+        return Err(Box::from("index argument missing"));
+    }
+    if db.is_none() {
+        return Err(Box::from("db argument missing"));
+    }
+    let index = index.unwrap();
+    let db = db.unwrap();
+
     if !directory_exists(&index) {
-        return Err(Box::from(format!("{:?} doesn't exist or is not a directory", index)));
+        return Err(Box::from(format!("{} doesn't exist or is not a directory", index.display())));
     }
 
     let mut bookmark_db = db::Db::new(&db)?;
@@ -115,9 +152,17 @@ fn cmd_search(index: PathBuf, db: PathBuf, query: String, num_results: u32) -> R
     Ok("Done".to_string())
 }
 
-fn cmd_write(index: PathBuf, bookmarks: PathBuf, db: PathBuf, max_age: String, commit_period: u32,
-    memory_budget: String, threads: usize) ->
+fn cmd_write(index_opt: Option<PathBuf>, bookmarks_opt: Option<PathBuf>, db_opt: Option<PathBuf>, max_age: String, commit_period: u32,
+    memory_budget: String, threads: usize, config_opt: Option<PathBuf>) ->
 Result<String, Box<dyn Error>> {
+    let mut config: Option<config::Config> = None;
+    if let Some(config_file) = config_opt {
+        match config::Config::load(&config_file) {
+            Ok(config_obj) => config = Some(config_obj),
+            Err(err) => return Err(err),
+        }
+    }
+
     let max_age_val: Option<u32> = if max_age == "" {
         None
     } else {
@@ -139,12 +184,35 @@ Result<String, Box<dyn Error>> {
         return Err(Box::from(res));
     }
 
-    // println!("Maximum age: {:?}", max_age_val);
-    // println!("Memory budget: {}", memory);
+    // Process configuration.
+    // For each configuration parameter, the rule is the same: command-line parameter
+    // has a higher precedence than the parameter from the configuration file.
+    // If neither is provided, we exit with an error.
+    let mut index: Option<PathBuf> = None;
+    let mut db: Option<PathBuf> = None;
+    let mut bookmarks: Option<PathBuf> = None;
+    if let Some(config_obj) = config {
+        index = Some(config_obj.common.index);
+        db = Some(config_obj.common.db);
+        bookmarks = Some(config_obj.common.bookmarks);
+    }
+    index = index.or(index_opt);
+    db = db.or(db_opt);
+    bookmarks = bookmarks.or(bookmarks_opt);
+    if index.is_none() {
+        return Err(Box::from("index argument missing"));
+    }
+    if db.is_none() {
+        return Err(Box::from("db argument missing"));
+    }
+    if bookmarks.is_none() {
+        return Err(Box::from("bookmarks argument missing"));
+    }
+    let index = index.unwrap();
+    let db = db.unwrap();
+    let bookmarks = bookmarks.unwrap();
 
-    let index = index;
-    let index_str = index.into_os_string().into_string().unwrap();
-    let _ = create_if_not_file(&index_str)?;
+    let _ = create_if_not_file(&index)?;
 
     let f = File::open(bookmarks)?;
     let reader = BufReader::new(f);
@@ -169,27 +237,27 @@ Result<String, Box<dyn Error>> {
 
     println!("Indexing {} bookmarks", total_count);
 
-    let mut indexer = utils::Indexer::new(&index_str, memory, bookmark_db)
+    let mut indexer = utils::Indexer::new(&index, memory, bookmark_db)
         .expect("Failed to create indexer");
     indexer.index(filtered_bookmarks, commit_period, threads)?;
 
     Ok("".to_string())
 }
 
-fn create_if_not_file(entry: &str) -> Result<String, String> {
+fn create_if_not_file(entry: &PathBuf) -> Result<String, String> {
     if let Ok(metadata) = fs::metadata(entry) {
         let file_type = metadata.file_type();
         if file_type.is_file() {
-            return Err(format!("{} is a regular file", entry));
+            return Err(format!("{} is a regular file", entry.display()));
         } else if file_type.is_dir() {
-            return Ok(format!("{} already exists", entry));
+            return Ok(format!("{} already exists", entry.display()));
         }
     } else {
         // Try to create directory.
         match fs::create_dir(entry) {
-            Ok(()) => return Ok(format!("created directory {}", entry)),
+            Ok(()) => return Ok(format!("created directory {}", entry.display())),
             Err(err) => {
-                return Err(format!("couldn't create directory {}: {}", entry, err));
+                return Err(format!("couldn't create directory {}: {}", entry.display(), err));
             }
         }
     }

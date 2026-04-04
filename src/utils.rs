@@ -61,9 +61,9 @@ pub struct BookmarkMessage {
 }
 
 impl Indexer {
-    pub fn new(index_path: &str, memory_budget: usize, db: db::Db) -> Result<Indexer, Box<dyn Error>> {
+    pub fn new(index_path: &PathBuf, memory_budget: usize, db: db::Db) -> Result<Indexer, Box<dyn Error>> {
         let schema = create_schema();
-        let directory = MmapDirectory::open(&index_path)?;
+        let directory = MmapDirectory::open(index_path)?;
         let index = Index::open_or_create(directory, schema.clone())?;
         let index_writer: IndexWriter = index.writer(memory_budget)?;
         Ok(Indexer{

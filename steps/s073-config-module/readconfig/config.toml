@@ -1,0 +1,8 @@
+[common]
+db = "bookmark.db"
+bookmark = "bookmarks.html"
+index = "index"
+
+[server]
+port = 8080
+apikey = "somekey"
