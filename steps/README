@@ -260,3 +260,6 @@ Extracted config operations to a separate module config.rs.
 s074-optional-config
 Any key in a TOML file can be optional by declaring its type as Option<String>
 or Option<PathBuf>. In this example we made bookmark optional.
+
+s075-home-dir
+Get current user's home directory: std::env::home_dir().
