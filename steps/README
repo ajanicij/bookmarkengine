@@ -253,3 +253,10 @@ Read a TOML file using toml crate.
 s072-readconfig
 Read configuration file name from command line, open the configuration file
 and parse it, and print the configuration.
+
+s073-config-module
+Extracted config operations to a separate module config.rs.
+
+s074-optional-config
+Any key in a TOML file can be optional by declaring its type as Option<String>
+or Option<PathBuf>. In this example we made bookmark optional.
