@@ -17,6 +17,8 @@ use crate::BookmarkScanner;
 use crate::scanner::*;
 use crate::utils::*;
 
+const DEFAULT_CONFIG: &str = ".bookmarkengine.cfg";
+
 #[derive(Parser)]
 #[command(name = "write")]
 struct Args {
@@ -27,7 +29,7 @@ struct Args {
 #[derive(Subcommand, Debug)]
 enum Command {
     Write {
-        #[arg(long, short)]
+        #[arg(long, short, default_value = None)]
         index: Option<PathBuf>,
 
         #[arg(long, short)]
@@ -48,7 +50,7 @@ enum Command {
         #[arg(long, default_value = "20")]
         threads: usize,
 
-        #[arg(long, short, default_value = "")]
+        #[arg(long, short)]
         config: Option<PathBuf>,
     },
 
@@ -65,7 +67,7 @@ enum Command {
         #[arg(long, short = 'n', help = "Number of results (0 for all)", default_value = "0")]
         num_results: u32,
 
-        #[arg(long, short, default_value = "")]
+        #[arg(long, short)]
         config: Option<PathBuf>,
     }
 }
@@ -82,7 +84,6 @@ fn main() {
 
 fn run() -> Result<String, Box<dyn Error>> {
     let args = Args::parse();
-    // println!("command: {:?}", args.command);
     match args.command {
         Command::Write{
             index,
@@ -113,9 +114,19 @@ fn run() -> Result<String, Box<dyn Error>> {
 }
 
 fn cmd_search(index_opt: Option<PathBuf>, db_opt: Option<PathBuf>, query: String, num_results: u32, config_opt: Option<PathBuf>) -> Result<String, Box<dyn Error>> {
+    let mut default_config: Option<PathBuf> = None;
+    if let Some(home_dir) = std::env::home_dir() {
+        default_config = Some(home_dir.join(DEFAULT_CONFIG));
+    }
+
     let mut config: Option<config::Config> = None;
     if let Some(config_file) = config_opt {
         match config::Config::load(&config_file) {
+            Ok(config_obj) => config = Some(config_obj),
+            Err(err) => return Err(err),
+        }
+    } else if let Some(default_config_file) = default_config {
+        match config::Config::load(&default_config_file) {
             Ok(config_obj) => config = Some(config_obj),
             Err(err) => return Err(err),
         }
@@ -125,14 +136,12 @@ fn cmd_search(index_opt: Option<PathBuf>, db_opt: Option<PathBuf>, query: String
     // For each configuration parameter, the rule is the same: command-line parameter
     // has a higher precedence than the parameter from the configuration file.
     // If neither is provided, we exit with an error.
-    let mut index: Option<PathBuf> = None;
-    let mut db: Option<PathBuf> = None;
+    let mut index = index_opt;
+    let mut db = db_opt;
     if let Some(config_obj) = config {
-        index = Some(config_obj.common.index);
-        db = Some(config_obj.common.db);
+        index = index.or(Some(config_obj.common.index));
+        db = db.or(Some(config_obj.common.db));
     }
-    index = index.or(index_opt);
-    db = db.or(db_opt);
     if index.is_none() {
         return Err(Box::from("index argument missing"));
     }
@@ -155,9 +164,19 @@ fn cmd_search(index_opt: Option<PathBuf>, db_opt: Option<PathBuf>, query: String
 fn cmd_write(index_opt: Option<PathBuf>, bookmarks_opt: Option<PathBuf>, db_opt: Option<PathBuf>, max_age: String, commit_period: u32,
     memory_budget: String, threads: usize, config_opt: Option<PathBuf>) ->
 Result<String, Box<dyn Error>> {
+    let mut default_config: Option<PathBuf> = None;
+    if let Some(home_dir) = std::env::home_dir() {
+        default_config = Some(home_dir.join(DEFAULT_CONFIG));
+    }
+
     let mut config: Option<config::Config> = None;
     if let Some(config_file) = config_opt {
         match config::Config::load(&config_file) {
+            Ok(config_obj) => config = Some(config_obj),
+            Err(err) => return Err(err),
+        }
+    } else if let Some(default_config_file) = default_config {
+        match config::Config::load(&default_config_file) {
             Ok(config_obj) => config = Some(config_obj),
             Err(err) => return Err(err),
         }
@@ -188,17 +207,14 @@ Result<String, Box<dyn Error>> {
     // For each configuration parameter, the rule is the same: command-line parameter
     // has a higher precedence than the parameter from the configuration file.
     // If neither is provided, we exit with an error.
-    let mut index: Option<PathBuf> = None;
-    let mut db: Option<PathBuf> = None;
-    let mut bookmarks: Option<PathBuf> = None;
-    if let Some(config_obj) = config {
-        index = Some(config_obj.common.index);
-        db = Some(config_obj.common.db);
-        bookmarks = Some(config_obj.common.bookmarks);
+    let mut index = index_opt.clone();
+    let mut db = db_opt.clone();
+    let mut bookmarks = bookmarks_opt.clone();
+    if let Some(ref config_obj) = config {
+        index = index.or(Some(config_obj.common.index.clone()));
+        db = db.or(Some(config_obj.common.db.clone()));
+        bookmarks = bookmarks.or(Some(config_obj.common.bookmarks.clone()));
     }
-    index = index.or(index_opt);
-    db = db.or(db_opt);
-    bookmarks = bookmarks.or(bookmarks_opt);
     if index.is_none() {
         return Err(Box::from("index argument missing"));
     }
