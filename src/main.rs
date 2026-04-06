@@ -122,13 +122,21 @@ fn cmd_search(index_opt: Option<PathBuf>, db_opt: Option<PathBuf>, query: String
     let mut config: Option<config::Config> = None;
     if let Some(config_file) = config_opt {
         match config::Config::load(&config_file) {
-            Ok(config_obj) => config = Some(config_obj),
-            Err(err) => return Err(err),
+            Ok(config_obj) => {
+                println!("Reading from configuration file: {}", config_file.display());
+                config = Some(config_obj)
+            },
+            Err(err) => return Err(Box::from(format!(
+                "Error reading {}: {}", config_file.display(), err)))
         }
     } else if let Some(default_config_file) = default_config {
         match config::Config::load(&default_config_file) {
-            Ok(config_obj) => config = Some(config_obj),
-            Err(err) => return Err(err),
+            Ok(config_obj) => {
+                println!("Reading from default configuration file: {}", default_config_file.display());
+                config = Some(config_obj)
+            },
+            Err(err) => return Err(Box::from(format!(
+                "Error reading {}: {}", default_config_file.display(), err)))
         }
     }
 
@@ -151,6 +159,10 @@ fn cmd_search(index_opt: Option<PathBuf>, db_opt: Option<PathBuf>, query: String
     let index = index.unwrap();
     let db = db.unwrap();
 
+    println!("index: {}", index.display());
+    println!("db: {}", db.display());
+    println!("");
+
     if !directory_exists(&index) {
         return Err(Box::from(format!("{} doesn't exist or is not a directory", index.display())));
     }
@@ -172,13 +184,21 @@ Result<String, Box<dyn Error>> {
     let mut config: Option<config::Config> = None;
     if let Some(config_file) = config_opt {
         match config::Config::load(&config_file) {
-            Ok(config_obj) => config = Some(config_obj),
-            Err(err) => return Err(err),
+            Ok(config_obj) => {
+                println!("Reading from configuration file: {}", config_file.display());
+                config = Some(config_obj)
+            },
+            Err(err) => return Err(Box::from(format!(
+                "Error reading {}: {}", config_file.display(), err)))
         }
     } else if let Some(default_config_file) = default_config {
         match config::Config::load(&default_config_file) {
-            Ok(config_obj) => config = Some(config_obj),
-            Err(err) => return Err(err),
+            Ok(config_obj) => {
+                println!("Reading from default configuration file: {}", default_config_file.display());
+                config = Some(config_obj)
+            },
+            Err(err) => return Err(Box::from(format!(
+                "Error reading {}: {}", default_config_file.display(), err)))
         }
     }
 
@@ -227,6 +247,11 @@ Result<String, Box<dyn Error>> {
     let index = index.unwrap();
     let db = db.unwrap();
     let bookmarks = bookmarks.unwrap();
+
+    println!("index: {}", index.display());
+    println!("db: {}", db.display());
+    println!("bookmarks: {}", bookmarks.display());
+    println!("");
 
     let _ = create_if_not_file(&index)?;
 
