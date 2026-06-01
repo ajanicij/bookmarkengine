@@ -263,3 +263,24 @@ or Option<PathBuf>. In this example we made bookmark optional.
 
 s075-home-dir
 Get current user's home directory: std::env::home_dir().
+
+s076-basic-axum
+Basic axum REST service that has a hard-coded response to /v1/getit.
+
+s077-more-idiomatic-axum
+Define struct GetItResponse that is used for generating REST response.
+
+s078-request-with-message
+Axum service with endpoint /v1/myfun/{message}, returning JSON object
+{"response":"Message was 'hello world'"}.
+
+s079-multiple-parameters
+Endpoint with parameters: http://localhost:8000/v1/myfun?name=John&greeting=hello.
+Send request like this:
+curl "http://localhost:8000/v1/myfun?name=John&greeting=hello"
+
+s080-spawn_blocking
+The asynchronous handler calls synchronous function mylib::myfun
+inside tokio::task::spawn_blocking.
+Send request like this:
+curl "http://localhost:8000/v1/myfun?name=John&greeting=hello"
