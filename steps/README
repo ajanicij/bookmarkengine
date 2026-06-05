@@ -284,3 +284,11 @@ The asynchronous handler calls synchronous function mylib::myfun
 inside tokio::task::spawn_blocking.
 Send request like this:
 curl "http://localhost:8000/v1/myfun?name=John&greeting=hello"
+
+s081-error-response
+From s080, but also with error responses. Invalid URLs elicit
+error responses:
+With a bad path, e.g.
+curl "http://localhost:8000/v2/myfun?nam2=John&greeting=hola"
+With an invalid parameter, e.g.
+curl "http://localhost:8000/v2/myfun?nam2=John&greeting2=hola"
